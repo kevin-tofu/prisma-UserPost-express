@@ -1,7 +1,23 @@
 // import express from 'express'
 import { Request, Response } from 'express'
-import { Prisma, PrismaClient } from '@prisma/client'
+import { Prisma, PrismaClient, User, Post } from '@prisma/client'
 const prisma = new PrismaClient()
+
+interface  IF_datatime_range {
+  lte?: string|Date;
+  gte?: string|Date;
+}
+const parse_query = (query: any) => {
+  let ret: IF_datatime_range = {};
+  if (query.lte !== undefined){
+    ret.lte = new Date(query.lte).toISOString()
+  }
+  if (query.lte !== undefined){
+    ret.gte = new Date(query.gte).toISOString()
+  }
+  return ret
+}
+
 
 exports.post_signup = async (req: Request, res: Response) => {
   const { name, email, posts } = req.body
@@ -10,7 +26,7 @@ exports.post_signup = async (req: Request, res: Response) => {
     return { title: post?.title, content: post?.content }
   })
   
-  const result = await prisma.user.create({
+  const result: User|null = await prisma.user.create({
     data: {
       name,
       email,
@@ -23,12 +39,18 @@ exports.post_signup = async (req: Request, res: Response) => {
 }
 
 exports.post_post = async (req: Request, res: Response) => {
-  const { title, content, authorEmail } = req.body
-  const result = await prisma.post.create({
+  const { title, content, authorEmail, datetime } = req.body
+  // let _datetime = (datetime === undefined) ? new Date() : new Date(datetime)
+  
+  const result: Post|null = await prisma.post.create({
     data: {
-      title,
-      content,
-      author: { connect: { email: authorEmail } },
+      title: title,
+      content: content,
+      author: { 
+        connect: { 
+          email: authorEmail 
+        } 
+      }
     },
   })
   res.json(result)
